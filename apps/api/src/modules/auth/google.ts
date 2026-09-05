@@ -27,7 +27,13 @@ const googleAuthRoutes: FastifyPluginAsync = async (app) => {
       auth: fastifyOauth2.GOOGLE_CONFIGURATION,
     },
     startRedirectPath: "/google",
-    callbackUri: `${env.API_URL}/api/auth/google/callback`,
+    // points at the WEB APP's own domain, not the API's — Google redirects the
+    // browser here directly, and if that landed on the API's separate domain,
+    // the session cookie it sets would be scoped there instead of to the site
+    // the user is actually on. Next.js's /api/* rewrite proxies this back to
+    // this exact handler, so the response (and its Set-Cookie) looks like it
+    // came from the web app all along.
+    callbackUri: `${env.WEB_APP_URL}/api/auth/google/callback`,
   });
 
   app.get("/google/callback", async (request, reply) => {

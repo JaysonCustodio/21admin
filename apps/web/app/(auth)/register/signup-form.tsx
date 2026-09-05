@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
-import { apiClient, API_BASE_URL } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 import { GoogleIcon } from "../social-icons";
 
 interface FormState {
@@ -58,7 +58,9 @@ export function SignupForm() {
   }
 
   function handleGoogleSignup() {
-    window.location.href = `${API_BASE_URL}/api/auth/google`;
+    // relative, not API_BASE_URL — stays same-origin through the Next.js
+    // rewrite proxy (see next.config.js)
+    window.location.href = "/api/auth/google";
   }
 
   return (
