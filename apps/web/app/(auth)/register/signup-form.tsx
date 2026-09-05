@@ -3,7 +3,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { apiClient, API_BASE_URL } from "@/lib/api-client";
-import { GoogleIcon, FacebookIcon } from "../social-icons";
+import { GoogleIcon } from "../social-icons";
 
 interface FormState {
   fullName: string;
@@ -61,10 +61,6 @@ export function SignupForm() {
     window.location.href = `${API_BASE_URL}/api/auth/google`;
   }
 
-  function handleFacebookSignup() {
-    window.location.href = `${API_BASE_URL}/api/auth/facebook`;
-  }
-
   return (
     <>
       <div className="mb-6 text-center">
@@ -80,15 +76,6 @@ export function SignupForm() {
         >
           <GoogleIcon />
           Continue with Google
-        </button>
-
-        <button
-          type="button"
-          onClick={handleFacebookSignup}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
-        >
-          <FacebookIcon />
-          Continue with Facebook
         </button>
       </div>
 
