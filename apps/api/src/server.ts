@@ -62,6 +62,17 @@ async function buildServer() {
     await app.register(fastifyStatic, { root: UPLOADS_ROOT, prefix: "/uploads/" });
   }
 
+  // health check — for uptime pingers keeping the free instance from sleeping,
+  // and for confirming the database connection is actually alive, not just the process
+  app.get("/healthz", async (_request, reply) => {
+    try {
+      await app.prisma.$queryRaw`SELECT 1`;
+      return reply.send({ status: "ok" });
+    } catch {
+      return reply.code(503).send({ status: "error" });
+    }
+  });
+
   // public routes: no session required
   await app.register(stripeWebhooksRoutes);
   await app.register(authRoutes, { prefix: "/api/auth" });
