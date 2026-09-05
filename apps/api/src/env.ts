@@ -17,6 +17,13 @@ const envSchema = z.object({
   XENDIT_SECRET_KEY: z.string().optional(),
   XENDIT_WEBHOOK_TOKEN: z.string().optional(),
   XENDIT_PAYOUT_GCASH_NUMBER: z.string().optional(),
+  // optional — uploads fall back to local disk when unset, which is fine for
+  // local dev but doesn't survive a redeploy on a host with an ephemeral disk
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().optional(),
+  R2_PUBLIC_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

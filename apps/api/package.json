@@ -8,6 +8,7 @@
     "start": "node --env-file=../../.env dist/server.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1127.0",
     "@business-platform/db": "workspace:*",
     "@business-platform/shared-types": "workspace:*",
     "@fastify/cookie": "^9.4.0",

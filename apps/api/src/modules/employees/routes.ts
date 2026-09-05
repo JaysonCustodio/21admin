@@ -1,6 +1,4 @@
-import fs from "node:fs";
 import path from "node:path";
-import { pipeline } from "node:stream/promises";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { createEmployeeSchema, updateEmployeeSchema } from "./schema";
 import {
@@ -13,7 +11,7 @@ import {
   type PortalCredentials,
 } from "./service";
 import { env } from "../../env";
-import { EMPLOYEE_PHOTOS_DIR } from "../../lib/uploads";
+import { saveUploadedFile } from "../../lib/storage";
 import { EMPLOYEE_MANAGERS, EMPLOYEE_SENSITIVE_FIELDS, ALL_STAFF } from "../../lib/roles";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -120,15 +118,12 @@ const employeesRoutes: FastifyPluginAsync = async (app) => {
 
       const ext = path.extname(file.filename) || ".jpg";
       const filename = `${employee.id}-${Date.now()}${ext}`;
-      const filePath = path.join(EMPLOYEE_PHOTOS_DIR, filename);
-      await pipeline(file.file, fs.createWriteStream(filePath));
-
-      if (file.file.truncated) {
-        await fs.promises.unlink(filePath).catch(() => {});
+      const { url, truncated } = await saveUploadedFile(file, "employees", filename);
+      if (truncated || !url) {
         return reply.code(400).send({ error: "Image is too large (max 5MB)." });
       }
 
-      const updated = await updateEmployeePhoto(app, employee.id, `/uploads/employees/${filename}`);
+      const updated = await updateEmployeePhoto(app, employee.id, url);
       return reply.send({ employee: updated });
     } catch (err) {
       if (err instanceof HttpError) {

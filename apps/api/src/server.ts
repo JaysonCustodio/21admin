@@ -6,6 +6,7 @@ import fastifyStatic from "@fastify/static";
 import { ZodError } from "zod";
 import { env } from "./env";
 import { UPLOADS_ROOT } from "./lib/uploads";
+import { isR2Configured } from "./lib/storage";
 
 import prismaPlugin from "./plugins/prisma";
 import authPlugin from "./plugins/auth";
@@ -49,7 +50,17 @@ async function buildServer() {
   await app.register(cookie);
   await app.register(prismaPlugin);
   await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
-  await app.register(fastifyStatic, { root: UPLOADS_ROOT, prefix: "/uploads/" });
+
+  if (isR2Configured) {
+    // uploads live in R2 — redirect straight to the public object instead of
+    // proxying bytes through this server
+    app.get("/uploads/*", async (request, reply) => {
+      const key = (request.params as { "*": string })["*"];
+      return reply.redirect(302, `${env.R2_PUBLIC_URL}/${key}`);
+    });
+  } else {
+    await app.register(fastifyStatic, { root: UPLOADS_ROOT, prefix: "/uploads/" });
+  }
 
   // public routes: no session required
   await app.register(stripeWebhooksRoutes);

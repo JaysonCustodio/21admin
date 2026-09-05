@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import type { AttendanceEvent, AttendanceEventType } from "@business-platform/shared-types";
 import { apiClient } from "@/lib/api-client";
 
@@ -42,15 +42,30 @@ export function MonthlyAttendance() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [events, setEvents] = useState<AttendanceEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    setEvents(null);
+  function loadEvents() {
     setError(null);
-    apiClient
+    return apiClient
       .get<{ events: AttendanceEvent[] }>(`/api/attendance/me/month?year=${year}&month=${month}`)
       .then((data) => setEvents(data.events))
       .catch(() => setError("Couldn't load your attendance history."));
+  }
+
+  useEffect(() => {
+    setEvents(null);
+    loadEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
+
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    try {
+      await loadEvents();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   function goToPreviousMonth() {
     if (month === 1) {
@@ -94,6 +109,16 @@ export function MonthlyAttendance() {
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Attendance history</h2>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            aria-label="Refresh"
+            title="Refresh"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:opacity-60 dark:text-slate-400 dark:hover:bg-slate-700"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
           <button
             type="button"
             onClick={goToPreviousMonth}

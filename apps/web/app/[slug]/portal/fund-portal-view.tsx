@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import Image from "next/image";
 import { LogOut, QrCode, X } from "lucide-react";
 import type { FundMemberSession, SinkingFundFrequency } from "@business-platform/shared-types";
 import { apiClient, API_BASE_URL } from "@/lib/api-client";
@@ -44,13 +45,15 @@ export function FundPortalView({ slug, session }: { slug: string; session: FundM
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900" style={themeStyle}>
       <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-800">
         <div className="flex items-center gap-2">
-          {session.company.logoUrl && (
+          {session.company.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={`${API_BASE_URL}${session.company.logoUrl}`}
               alt={session.company.name}
-              className="h-8 w-8 rounded-lg object-cover"
+              className="h-8 w-8 shrink-0 rounded-lg object-cover"
             />
+          ) : (
+            <Image src="/21admin-logo.png" alt="21 Admin" width={32} height={32} className="shrink-0 rounded-lg" />
           )}
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{session.fund.name}</p>

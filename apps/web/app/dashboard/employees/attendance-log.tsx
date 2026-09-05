@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import type { AttendanceEventWithEmployee, AttendanceEventType } from "@business-platform/shared-types";
 import { ATTENDANCE_EVENT_TYPES } from "@business-platform/shared-types";
 import { apiClient } from "@/lib/api-client";
@@ -44,13 +44,27 @@ export function AttendanceLog() {
   const [typeFilter, setTypeFilter] = useState<AttendanceEventType | "ALL">("ALL");
   const [dateFilter, setDateFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    apiClient
+  function loadEvents() {
+    return apiClient
       .get<{ events: AttendanceEventWithEmployee[] }>("/api/attendance")
       .then((data) => setEvents(data.events))
       .catch(() => setEvents([]));
+  }
+
+  useEffect(() => {
+    loadEvents();
   }, []);
+
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    try {
+      await loadEvents();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   const filteredEvents = useMemo(() => {
     if (!events) return null;
@@ -114,6 +128,16 @@ export function AttendanceLog() {
             Clear date
           </button>
         )}
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          aria-label="Refresh"
+          title="Refresh"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">

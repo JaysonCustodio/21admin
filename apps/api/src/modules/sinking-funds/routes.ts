@@ -1,6 +1,4 @@
-import fs from "node:fs";
 import path from "node:path";
-import { pipeline } from "node:stream/promises";
 import type { FastifyPluginAsync } from "fastify";
 import { createSinkingFundSchema, addMemberSchema, setContributionPaidSchema } from "./schema";
 import {
@@ -16,7 +14,7 @@ import {
   HttpError,
 } from "./service";
 import { CASH_MANAGERS } from "../../lib/roles";
-import { SINKING_FUND_QR_DIR } from "../../lib/uploads";
+import { readUploadedFile, persistFile } from "../../lib/storage";
 import { imageContainsQrCode } from "../../lib/qr-code";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -79,23 +77,21 @@ const sinkingFundsRoutes: FastifyPluginAsync = async (app) => {
         return reply.code(400).send({ error: "File must be a JPEG, PNG, WebP, or GIF image." });
       }
 
-      const ext = path.extname(file.filename) || ".png";
-      const filename = `${id}-${Date.now()}${ext}`;
-      const filePath = path.join(SINKING_FUND_QR_DIR, filename);
-      await pipeline(file.file, fs.createWriteStream(filePath));
-
-      if (file.file.truncated) {
-        await fs.promises.unlink(filePath).catch(() => {});
+      const { buffer, truncated } = await readUploadedFile(file);
+      if (truncated || !buffer) {
         return reply.code(400).send({ error: "Image is too large (max 5MB)." });
       }
 
-      const hasQrCode = await imageContainsQrCode(filePath);
+      const hasQrCode = await imageContainsQrCode(buffer);
       if (!hasQrCode) {
-        await fs.promises.unlink(filePath).catch(() => {});
         return reply.code(400).send({ error: "We couldn't find a QR code in that image. Upload a clear photo or screenshot of your payment QR code." });
       }
 
-      const fund = await updateSinkingFundQrCode(app, request.companyId, id, `/uploads/sinking-funds/${filename}`);
+      const ext = path.extname(file.filename) || ".png";
+      const filename = `${id}-${Date.now()}${ext}`;
+      const url = await persistFile(buffer, file.mimetype, "sinking-funds", filename);
+
+      const fund = await updateSinkingFundQrCode(app, request.companyId, id, url);
       return reply.send({ fund });
     } catch (err) {
       if (err instanceof HttpError) {

@@ -1,10 +1,8 @@
-import fs from "node:fs";
 import path from "node:path";
-import { pipeline } from "node:stream/promises";
 import type { FastifyPluginAsync } from "fastify";
 import { updateCompanySchema } from "./schema";
 import { getCompany, updateCompany, updateCompanyLogo, HttpError } from "./service";
-import { COMPANY_LOGOS_DIR } from "../../lib/uploads";
+import { saveUploadedFile } from "../../lib/storage";
 import { TEAM_MANAGERS } from "../../lib/roles";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
@@ -50,15 +48,12 @@ const companyRoutes: FastifyPluginAsync = async (app) => {
 
       const ext = path.extname(file.filename) || ".png";
       const filename = `${request.companyId}-${Date.now()}${ext}`;
-      const filePath = path.join(COMPANY_LOGOS_DIR, filename);
-      await pipeline(file.file, fs.createWriteStream(filePath));
-
-      if (file.file.truncated) {
-        await fs.promises.unlink(filePath).catch(() => {});
+      const { url, truncated } = await saveUploadedFile(file, "companies", filename);
+      if (truncated || !url) {
         return reply.code(400).send({ error: "Image is too large (max 5MB)." });
       }
 
-      const company = await updateCompanyLogo(app, request.companyId, `/uploads/companies/${filename}`);
+      const company = await updateCompanyLogo(app, request.companyId, url);
       return reply.send({ company });
     } catch (err) {
       if (err instanceof HttpError) {
