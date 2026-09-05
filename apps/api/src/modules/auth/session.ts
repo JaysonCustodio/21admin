@@ -23,7 +23,10 @@ export function verifySessionToken(token: string): SessionPayload {
 export function setSessionCookie(reply: FastifyReply, token: string, rememberMe: boolean) {
   reply.setCookie(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
+    // web and api are separate origins in production (different Render
+    // subdomains), so the cookie must be SameSite=None to survive cross-origin
+    // fetch calls — that requires Secure, which is only true once we're on HTTPS
+    sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     secure: env.NODE_ENV === "production",
     path: "/",
     ...(rememberMe ? { maxAge: REMEMBER_ME_MAX_AGE / 1000 } : {}),

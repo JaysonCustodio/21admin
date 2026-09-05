@@ -5,7 +5,9 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isFormData = init?.body instanceof FormData;
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  // relative, not prefixed with API_BASE_URL — Next.js rewrites this to the
+  // real backend so the browser only ever sees one origin (see next.config.js)
+  const res = await fetch(path, {
     ...init,
     credentials: "include",
     headers: {

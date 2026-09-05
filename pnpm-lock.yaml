@@ -140,7 +140,14 @@ importers:
         specifier: ^5.16.0
         version: 5.22.0
 
-  packages/shared-types: {}
+  packages/shared-types:
+    devDependencies:
+      '@business-platform/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
 
   packages/ui:
     dependencies:

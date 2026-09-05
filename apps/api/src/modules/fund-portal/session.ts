@@ -23,7 +23,9 @@ export function verifyFundSessionToken(token: string): FundSessionPayload {
 export function setFundSessionCookie(reply: FastifyReply, token: string) {
   reply.setCookie(FUND_SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
+    // see setSessionCookie's comment — web and api are separate origins in
+    // production, so this needs SameSite=None + Secure to survive cross-origin fetch
+    sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     secure: env.NODE_ENV === "production",
     path: "/",
     maxAge: FUND_SESSION_MAX_AGE / 1000,
