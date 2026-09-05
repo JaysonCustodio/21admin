@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Drop the licensed Continuum BC font files into public/fonts/continuum-bc/
+   using these exact filenames and the font becomes active automatically. */
+@font-face {
+  font-family: "Continuum BC";
+  src:
+    url("/fonts/continuum-bc/ContinuumBC-Regular.woff2") format("woff2"),
+    url("/fonts/continuum-bc/ContinuumBC-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Continuum BC";
+  src:
+    url("/fonts/continuum-bc/ContinuumBC-Medium.woff2") format("woff2"),
+    url("/fonts/continuum-bc/ContinuumBC-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Continuum BC";
+  src:
+    url("/fonts/continuum-bc/ContinuumBC-Bold.woff2") format("woff2"),
+    url("/fonts/continuum-bc/ContinuumBC-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: theme("fontFamily.sans");
+}
