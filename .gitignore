@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment variables (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Build output
+.next/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Turborepo
+.turbo/
+
+# Prisma
+packages/db/generated/
+
+# Uploaded user content (runtime data, not source)
+apps/api/uploads/**
+!apps/api/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Misc
+*.pem
+.vercel
+coverage/
