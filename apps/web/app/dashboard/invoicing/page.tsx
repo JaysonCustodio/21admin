@@ -1,10 +1,9 @@
+import { Receipt } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { hasModule } from "@/lib/entitlements";
-import { RECEIVABLES_MANAGERS, hasRole } from "@/lib/roles";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleLocked } from "../module-locked";
-import { AccessRestricted } from "../access-restricted";
-import { InvoicingPanel } from "./invoicing-panel";
+import { ComingSoon } from "@/components/ui/coming-soon";
 
 export default async function InvoicingPage() {
   const session = await getSession();
@@ -15,11 +14,11 @@ export default async function InvoicingPage() {
   return (
     <div>
       <PageHeader title="Invoicing" description="Create and send customer invoices." />
-      {hasRole(session.role, RECEIVABLES_MANAGERS) ? (
-        <InvoicingPanel defaultCurrency={session.company.defaultCurrency} />
-      ) : (
-        <AccessRestricted />
-      )}
+      <ComingSoon
+        title="Invoicing is on its way"
+        description="Create invoices, track payment status, and manage customers — this module is still being built."
+        icon={Receipt}
+      />
     </div>
   );
 }

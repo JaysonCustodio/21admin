@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 import { cookies } from "next/headers";
-import type { ModuleKey, UserRole } from "@business-platform/shared-types";
+import type { CompanyPlan, ModuleKey, UserRole } from "@business-platform/shared-types";
 import { API_BASE_URL } from "./api-client";
 
 export interface Session {
@@ -20,6 +20,7 @@ export interface Session {
     primaryColor: string | null;
     defaultCurrency: string;
     accountType: "PERSONAL" | "BUSINESS" | null;
+    plan: CompanyPlan;
   };
   modules: ModuleKey[];
   isEmployee: boolean;

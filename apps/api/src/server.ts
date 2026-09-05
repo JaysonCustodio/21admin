@@ -30,6 +30,7 @@ import loansRoutes from "./modules/loans/routes";
 import sinkingFundsRoutes from "./modules/sinking-funds/routes";
 import inventoryRoutes from "./modules/inventory/routes";
 import invoicingRoutes from "./modules/invoicing/routes";
+import billingRoutes from "./modules/billing/routes";
 
 import stripeWebhooksRoutes from "./billing/stripe-webhooks";
 
@@ -76,6 +77,7 @@ async function buildServer() {
     await protectedApp.register(sinkingFundsRoutes, { prefix: "/api" });
     await protectedApp.register(inventoryRoutes, { prefix: "/api" });
     await protectedApp.register(invoicingRoutes, { prefix: "/api" });
+    await protectedApp.register(billingRoutes, { prefix: "/api" });
   });
 
   return app;

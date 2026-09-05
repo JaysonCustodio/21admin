@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Plus, X, UserPlus, Check, KeyRound, Undo2, Zap, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Plus, X, UserPlus, Check, KeyRound, Undo2, Zap, Trash2, Search } from "lucide-react";
 import type {
   SinkingFundWithMembers,
   SinkingFundFrequency,
   EmployeeLookup,
   SinkingFundMemberPortalCredentials,
+  LoanWithDetails,
 } from "@business-platform/shared-types";
 import { apiClient, API_BASE_URL } from "@/lib/api-client";
 import { CopyButton } from "@/components/ui/copy-button";
 import { AvatarUpload } from "@/components/ui/avatar-upload";
+import { Pagination } from "@/components/ui/pagination";
 import { MemberDetailModal } from "./member-detail-modal";
+
+const PAGE_SIZE = 10;
 
 const FREQUENCY_LABELS: Record<SinkingFundFrequency, string> = {
   WEEKLY: "Weekly",
@@ -247,9 +251,12 @@ export function FundDetailPanel({
   isBusinessAccount: boolean;
 }) {
   const [fund, setFund] = useState<SinkingFundWithMembers | null>(null);
+  const [loans, setLoans] = useState<LoanWithDetails[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriodIndex, setSelectedPeriodIndex] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [newMemberCredentials, setNewMemberCredentials] = useState<Record<string, SinkingFundMemberPortalCredentials>>({});
   const [origin, setOrigin] = useState("");
   const [advanceMemberId, setAdvanceMemberId] = useState<string | null>(null);
@@ -281,6 +288,47 @@ export function FundDetailPanel({
     loadFund();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  useEffect(() => {
+    apiClient
+      .get<{ loans: LoanWithDetails[] }>("/api/loans")
+      .then((data) => setLoans(data.loans))
+      .catch(() => setLoans([]));
+  }, [slug]);
+
+  const fundLoans = useMemo(() => {
+    if (!fund || !loans) return [];
+    return loans.filter((loan) => loan.sinkingFundId === fund.id);
+  }, [fund, loans]);
+
+  // outstanding principal still owed back — floored per loan since a loan can't "owe" a negative amount
+  const totalLoanedOut = useMemo(() => {
+    return fundLoans.reduce((sum, loan) => {
+      if (loan.status === "PAID_OFF") return sum;
+      const repaid = loan.repayments.reduce((s, r) => s + Number(r.amount), 0);
+      return sum + Math.max(0, Number(loan.principal) - repaid);
+    }, 0);
+  }, [fundLoans]);
+
+  const activeLoanCount = useMemo(() => fundLoans.filter((loan) => loan.status === "ACTIVE").length, [fundLoans]);
+
+  // cash actually available to the fund: every peso disbursed as principal leaves the fund,
+  // and every peso repaid (principal AND interest) comes back in — so a fully repaid loan
+  // returns more than it took out, and that interest becomes available too
+  const totalPrincipalDisbursed = useMemo(() => fundLoans.reduce((sum, loan) => sum + Number(loan.principal), 0), [fundLoans]);
+  const totalRepaymentsReceived = useMemo(
+    () => fundLoans.reduce((sum, loan) => sum + loan.repayments.reduce((s, r) => s + Number(r.amount), 0), 0),
+    [fundLoans]
+  );
+
+  // interest actually collected so far — only the portion of repayments beyond what's
+  // needed to return the principal counts as revenue earned by the fund
+  const totalLoanRevenue = useMemo(() => {
+    return fundLoans.reduce((sum, loan) => {
+      const repaid = loan.repayments.reduce((s, r) => s + Number(r.amount), 0);
+      return sum + Math.max(0, repaid - Number(loan.principal));
+    }, 0);
+  }, [fundLoans]);
 
   const periods = useMemo(() => {
     if (!fund || fund.members.length === 0) return [];
@@ -347,8 +395,25 @@ export function FundDetailPanel({
       .filter(({ contribution }) => {
         if (statusFilter === "ALL") return true;
         return statusFilter === "PAID" ? contribution.paid : !contribution.paid;
+      })
+      .filter(({ member }) => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return true;
+        return (
+          memberName(member).toLowerCase().includes(query) ||
+          member.memberCode.toLowerCase().includes(query) ||
+          (member.manualMobile?.toLowerCase().includes(query) ?? false) ||
+          (member.manualEmail?.toLowerCase().includes(query) ?? false)
+        );
       });
-  }, [fund, selectedPeriod, statusFilter]);
+  }, [fund, selectedPeriod, statusFilter, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedPeriod, statusFilter, searchQuery]);
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const paginatedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function goToPreviousPeriod() {
     setSelectedPeriodIndex((i) => (i !== null ? Math.max(0, i - 1) : i));
@@ -492,7 +557,7 @@ export function FundDetailPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
             Total contributed
@@ -501,6 +566,29 @@ export function FundDetailPanel({
             {formatCurrency(totalContributed, defaultCurrency)}
           </p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">of {formatCurrency(totalDue, defaultCurrency)} total</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Loaned out</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            {formatCurrency(totalLoanedOut, defaultCurrency)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {activeLoanCount} active loan{activeLoanCount === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Loan revenue</p>
+          <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(totalLoanRevenue, defaultCurrency)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">interest collected so far</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Available funds</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            {formatCurrency(Math.max(0, totalContributed - totalPrincipalDisbursed + totalRepaymentsReceived), defaultCurrency)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">contributed, minus loans out, plus payments in</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -547,21 +635,33 @@ export function FundDetailPanel({
             </button>
           </div>
 
-          <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-            {(["ALL", "PAID", "UNPAID"] as StatusFilter[]).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setStatusFilter(value)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                  statusFilter === value
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
-                    : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                {value === "ALL" ? "All" : value === "PAID" ? "Paid" : "Not yet paid"}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search members…"
+                className="w-40 rounded-lg border border-slate-300 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+            </div>
+            <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+              {(["ALL", "PAID", "UNPAID"] as StatusFilter[]).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setStatusFilter(value)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                    statusFilter === value
+                      ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {value === "ALL" ? "All" : value === "PAID" ? "Paid" : "Not yet paid"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -581,14 +681,14 @@ export function FundDetailPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {rows.length === 0 && (
+              {paginatedRows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-3 py-4 text-center text-slate-400 dark:text-slate-500">
                     No members match this filter.
                   </td>
                 </tr>
               )}
-              {rows.map(({ member, contribution, nextUnpaid }) => {
+              {paginatedRows.map(({ member, contribution, nextUnpaid }) => {
                 // "advance payment" = paying a later period while an earlier one for
                 // this member is still unpaid — i.e. this isn't their actual next-due contribution
                 const isAdvance = !contribution.paid && nextUnpaid !== null && nextUnpaid.id !== contribution.id;
@@ -768,6 +868,8 @@ export function FundDetailPanel({
             </tbody>
           </table>
         </div>
+
+        <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
 
         <div className="mt-3">
           <AddMemberRow

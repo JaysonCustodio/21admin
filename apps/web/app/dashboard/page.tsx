@@ -32,11 +32,28 @@ export default async function DashboardPage() {
                 href={item.href}
                 className="group rounded-xl border border-slate-200 bg-white p-5 transition hover:border-primary hover:shadow-sm dark:border-slate-700 dark:bg-slate-800"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
+                <div className="flex items-start justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  {item.comingSoon && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      Coming soon
+                    </span>
+                  )}
                 </div>
                 <h2 className="mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{item.label}</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.description}</p>
+                {item.details && (
+                  <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3 dark:border-slate-700">
+                    {item.details.map((detail) => (
+                      <li key={detail} className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </Link>
             );
           })}

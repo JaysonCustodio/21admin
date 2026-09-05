@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { Sidebar } from "./sidebar";
-import { Topbar } from "./topbar";
+import { DashboardShell } from "./dashboard-shell";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -25,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div className="flex min-h-screen md:h-screen md:overflow-hidden" style={themeStyle}>
-      <Sidebar
+      <DashboardShell
         companyId={session.company.id}
         companyName={session.company.name}
         companySlug={session.company.slug}
@@ -33,11 +32,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         modules={session.modules}
         role={session.role}
         isEmployee={session.isEmployee}
-      />
-      <div className="flex flex-1 flex-col md:min-h-0">
-        <Topbar fullName={session.user.fullName} email={session.user.email} />
-        <main className="flex-1 bg-slate-50 p-6 dark:bg-slate-900 md:overflow-y-auto">{children}</main>
-      </div>
+        fullName={session.user.fullName}
+        email={session.user.email}
+      >
+        {children}
+      </DashboardShell>
     </div>
   );
 }

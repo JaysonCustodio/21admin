@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Loader2, Plus, X, ChevronRight, Trash2 } from "lucide-react";
+import { Loader2, Plus, X, ChevronRight, Trash2, Search } from "lucide-react";
 import type { SinkingFundWithMembers, SinkingFundFrequency } from "@business-platform/shared-types";
 import { SINKING_FUND_FREQUENCIES } from "@business-platform/shared-types";
 import { apiClient } from "@/lib/api-client";
+import { Pagination } from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 const FREQUENCY_LABELS: Record<SinkingFundFrequency, string> = {
   WEEKLY: "Weekly",
@@ -44,6 +47,9 @@ export function SinkingFundsPanel({ defaultCurrency }: { defaultCurrency: string
   const [error, setError] = useState<string | null>(null);
   const [fundToDelete, setFundToDelete] = useState<SinkingFundWithMembers | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [frequencyFilter, setFrequencyFilter] = useState<SinkingFundFrequency | "ALL">("ALL");
+  const [page, setPage] = useState(1);
 
   function loadFunds() {
     apiClient
@@ -53,6 +59,23 @@ export function SinkingFundsPanel({ defaultCurrency }: { defaultCurrency: string
   }
 
   useEffect(loadFunds, []);
+
+  const filteredFunds = useMemo(() => {
+    if (!funds) return null;
+    const query = searchQuery.trim().toLowerCase();
+    return funds.filter((fund) => {
+      const matchesFrequency = frequencyFilter === "ALL" || fund.frequency === frequencyFilter;
+      const matchesQuery = !query || fund.name.toLowerCase().includes(query);
+      return matchesFrequency && matchesQuery;
+    });
+  }, [funds, searchQuery, frequencyFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, frequencyFilter]);
+
+  const pageCount = filteredFunds ? Math.max(1, Math.ceil(filteredFunds.length / PAGE_SIZE)) : 1;
+  const paginatedFunds = filteredFunds?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -230,12 +253,39 @@ export function SinkingFundsPanel({ defaultCurrency }: { defaultCurrency: string
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{error}</p>
       )}
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by fund name…"
+            className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          />
+        </div>
+        <select
+          value={frequencyFilter}
+          onChange={(e) => setFrequencyFilter(e.target.value as SinkingFundFrequency | "ALL")}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+        >
+          <option value="ALL">All frequencies</option>
+          {SINKING_FUND_FREQUENCIES.map((value) => (
+            <option key={value} value={value}>
+              {FREQUENCY_LABELS[value]}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="space-y-3">
         {funds === null && <p className="text-sm text-slate-400 dark:text-slate-500">Loading…</p>}
-        {funds !== null && funds.length === 0 && (
-          <p className="text-sm text-slate-400 dark:text-slate-500">No sinking funds yet.</p>
+        {funds !== null && paginatedFunds?.length === 0 && (
+          <p className="text-sm text-slate-400 dark:text-slate-500">
+            {funds.length === 0 ? "No sinking funds yet." : "No funds match your filters."}
+          </p>
         )}
-        {funds?.map((fund) => (
+        {paginatedFunds?.map((fund) => (
           <Link
             key={fund.id}
             href={`/dashboard/sinking-funds/${fund.slug}`}
@@ -271,6 +321,8 @@ export function SinkingFundsPanel({ defaultCurrency }: { defaultCurrency: string
           </Link>
         ))}
       </div>
+
+      <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
 
       {fundToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">

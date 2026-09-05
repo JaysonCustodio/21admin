@@ -1,6 +1,7 @@
 export * from "./employee";
 export * from "./payroll";
 export * from "./entitlements";
+export * from "./plans";
 export * from "./currency";
 export * from "./countries";
 export * from "./attendance-event";

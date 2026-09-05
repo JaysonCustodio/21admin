@@ -18,6 +18,9 @@ export const RECEIVABLES_MANAGERS: UserRole[] = ["OWNER", "TREASURER"];
 // inventory — operational stock, not cash
 export const INVENTORY_MANAGERS: UserRole[] = ["OWNER", "ADMIN"];
 
+// billing, multi-company management — reserved for the account creator
+export const OWNER_ONLY: UserRole[] = ["OWNER"];
+
 export function hasRole(role: UserRole | undefined, allowed: UserRole[]): boolean {
   return !!role && allowed.includes(role);
 }

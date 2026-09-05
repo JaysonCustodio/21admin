@@ -14,11 +14,18 @@ enum AccountType {
   BUSINESS
 }
 
+enum CompanyPlan {
+  STARTER
+  GROWTH
+  BUSINESS
+}
+
 model Company {
   id                    String       @id @default(cuid())
   name                  String
   slug                  String?      @unique
   accountType           AccountType?
+  plan                  CompanyPlan  @default(BUSINESS)
   onboardingCompletedAt DateTime?
   logoUrl               String?
   primaryColor          String?
@@ -272,21 +279,39 @@ enum LoanStatus {
   DEFAULTED
 }
 
+enum LoanFundSource {
+  PERSONAL
+  SINKING_FUND
+}
+
 model Loan {
-  id         String     @id @default(cuid())
-  companyId  String
-  company    Company    @relation(fields: [companyId], references: [id])
-  employeeId String
-  employee   Employee   @relation(fields: [employeeId], references: [id])
-  principal  Decimal    @db.Decimal(12, 2)
-  termMonths Int
-  status     LoanStatus @default(ACTIVE)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  fundSource    LoanFundSource @default(PERSONAL)
+  sinkingFundId String?
+  sinkingFund   SinkingFund?   @relation(fields: [sinkingFundId], references: [id])
+
+  employeeId          String?
+  employee            Employee?          @relation(fields: [employeeId], references: [id])
+  sinkingFundMemberId String?
+  sinkingFundMember   SinkingFundMember? @relation(fields: [sinkingFundMemberId], references: [id])
+  manualBorrowerName  String?
+
+  principal    Decimal    @db.Decimal(12, 2)
+  interestRate Decimal    @default(0) @db.Decimal(5, 2)
+  termMonths   Int
+  status       LoanStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   repayments LoanRepayment[]
 
   @@index([companyId])
+  @@index([sinkingFundId])
+  @@index([employeeId])
+  @@index([sinkingFundMemberId])
 }
 
 model LoanRepayment {
@@ -322,6 +347,7 @@ model SinkingFund {
   updatedAt       DateTime             @updatedAt
 
   members SinkingFundMember[]
+  loans   Loan[]
 
   @@index([companyId])
 }
@@ -341,6 +367,7 @@ model SinkingFundMember {
   createdAt          DateTime    @default(now())
 
   contributions SinkingFundContribution[]
+  loans         Loan[]
 
   @@unique([sinkingFundId, memberCode])
   @@index([sinkingFundId])

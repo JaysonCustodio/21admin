@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { getSession } from "@/lib/auth";
+import { OWNER_ONLY, hasRole } from "@/lib/roles";
 import { PageHeader } from "@/components/ui/page-header";
 import { NAV_ITEMS } from "../../nav-config";
+import { BillingPanel } from "./billing-panel";
 
 export default async function BillingSettingsPage() {
   const session = await getSession();
@@ -32,29 +34,35 @@ export default async function BillingSettingsPage() {
         )}
       </div>
 
-      <div className="mt-4 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-800">
-        {moduleItems.map((item) => {
-          const isActive = item.module ? session.modules.includes(item.module) : false;
-          const Icon = item.icon;
-          return (
-            <div key={item.href} className="flex items-center justify-between px-5 py-4">
-              <div className="flex items-center gap-3">
-                <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.label}</span>
+      {hasRole(session.role, OWNER_ONLY) ? (
+        <div className="mt-4">
+          <BillingPanel plan={session.company.plan} sinkingFundsActive={session.modules.includes("sinking-funds")} />
+        </div>
+      ) : (
+        <div className="mt-4 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-800">
+          {moduleItems.map((item) => {
+            const isActive = item.module ? session.modules.includes(item.module) : false;
+            const Icon = item.icon;
+            return (
+              <div key={item.href} className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.label}</span>
+                </div>
+                {isActive ? (
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" /> Active
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-slate-400 dark:text-slate-500">
+                    <XCircle className="h-4 w-4" /> Not included
+                  </span>
+                )}
               </div>
-              {isActive ? (
-                <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-4 w-4" /> Active
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 text-sm font-medium text-slate-400 dark:text-slate-500">
-                  <XCircle className="h-4 w-4" /> Not included
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

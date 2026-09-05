@@ -1,10 +1,9 @@
+import { Boxes } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { hasModule } from "@/lib/entitlements";
-import { INVENTORY_MANAGERS, hasRole } from "@/lib/roles";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleLocked } from "../module-locked";
-import { AccessRestricted } from "../access-restricted";
-import { InventoryPanel } from "./inventory-panel";
+import { ComingSoon } from "@/components/ui/coming-soon";
 
 export default async function InventoryPage() {
   const session = await getSession();
@@ -15,7 +14,11 @@ export default async function InventoryPage() {
   return (
     <div>
       <PageHeader title="Inventory" description="Keep stock levels up to date." />
-      {hasRole(session.role, INVENTORY_MANAGERS) ? <InventoryPanel /> : <AccessRestricted />}
+      <ComingSoon
+        title="Inventory is on its way"
+        description="Track stock levels, low-stock alerts, and purchase history — this module is still being built."
+        icon={Boxes}
+      />
     </div>
   );
 }

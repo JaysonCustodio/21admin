@@ -2,8 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getFundSession } from "@/lib/fund-auth";
-import { PortalSidebar } from "./portal-sidebar";
-import { PortalTopbar } from "./portal-topbar";
+import { PortalShell } from "./portal-shell";
 import { FundPortalView } from "./fund-portal-view";
 
 export default async function PortalLayout({
@@ -37,21 +36,17 @@ export default async function PortalLayout({
 
   return (
     <div className="flex min-h-screen md:h-screen md:overflow-hidden" style={themeStyle}>
-      <PortalSidebar
+      <PortalShell
         slug={params.slug}
         companyName={session.company.name}
         logoUrl={session.company.logoUrl}
         modules={session.modules}
         role={session.role}
-      />
-      <div className="flex flex-1 flex-col md:min-h-0">
-        <PortalTopbar
-          slug={params.slug}
-          fullName={session.user.fullName}
-          profileImageUrl={session.employee?.profileImageUrl ?? null}
-        />
-        <main className="flex-1 bg-slate-50 p-6 dark:bg-slate-900 md:overflow-y-auto">{children}</main>
-      </div>
+        fullName={session.user.fullName}
+        profileImageUrl={session.employee?.profileImageUrl ?? null}
+      >
+        {children}
+      </PortalShell>
     </div>
   );
 }

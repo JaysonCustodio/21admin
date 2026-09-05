@@ -81,6 +81,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           primaryColor: company.primaryColor,
           defaultCurrency: company.defaultCurrency,
           accountType: company.accountType,
+          plan: company.plan,
         },
         modules,
         isEmployee: user.employeeRecord !== null,
