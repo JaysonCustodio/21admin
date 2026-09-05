@@ -84,9 +84,33 @@ function NavLink({ href, children }: { href: string; children: string }) {
   );
 }
 
+const STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "21 Admin",
+  applicationCategory: "BusinessApplication",
+  applicationSubCategory: "Payroll, HR, and Community Fund Management Software",
+  description:
+    "Payroll, employee loan tracking, and recurring community fund (sinking fund) dues management in one dashboard, with a dedicated member portal for treasurers, cooperatives, and HOAs.",
+  operatingSystem: "Web",
+  featureList: FEATURES.map((f) => `${f.label}: ${f.description}`),
+  offers: PLAN_DETAILS.map((plan) => ({
+    "@type": "Offer",
+    name: plan.label,
+    description: plan.description,
+    price: plan.priceLabel === "Free" ? "0" : undefined,
+    priceCurrency: plan.priceLabel === "Free" ? "USD" : undefined,
+  })),
+};
+
 export default function MarketingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
+      />
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
