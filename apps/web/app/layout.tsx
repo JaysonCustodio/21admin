@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     shortcut: ["/favicons/favicon.ico"],
   },
   manifest: "/favicons/site.webmanifest",
+  verification: {
+    google: "arU3iupK-v-jJUjc95i1sgbkUftNVQUAv6EbVaya21U",
+  },
   openGraph: {
     type: "website",
     siteName: "21 Admin",
@@ -33,14 +36,14 @@ export const metadata: Metadata = {
     description:
       "Payroll, employee loans, and recurring community fund (sinking fund) management in one dashboard, with a dedicated member portal for treasurers and co-ops.",
     url: SITE_URL,
-    images: ["/21admin-logo.png"],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "21 Admin — Payroll, Loans & Community Funds" }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "21 Admin — Payroll, Loans & Community Funds",
     description:
       "Payroll, employee loans, and recurring community fund (sinking fund) management in one dashboard.",
-    images: ["/21admin-logo.png"],
+    images: ["/og-image.png"],
   },
 };
 
